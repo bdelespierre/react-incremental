@@ -7,7 +7,7 @@ export default function GeneratorsPage() {
   const { state } = useContext(StateContext)
   return (
     <>
-      {state.generators.map(generator => <Generator key={generator.name} generator={generator} />)}
+      {Object.entries(state.generators).map(([, generator]) => <Generator key={generator.name} generator={generator} />)}
     </>
   )
 }

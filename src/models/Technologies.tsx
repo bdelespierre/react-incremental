@@ -1,17 +1,16 @@
 import { ReactElement } from "react"
 import Icons from "../Icons"
 import React from "react"
-import Generators, { EntropicAccelerator } from "./Generators"
 import { StateType } from "../App"
-import { where } from "../Helpers"
 
 // ----------------------------------------------------------------------------
 // Models
 
 export type TechnologyModel = {
-  name: string
+  id: string,
+  name: string,
   icon: ReactElement,
-  description: string | ReactElement
+  description: string | ReactElement,
 
   cost: number,
   bought: boolean,
@@ -24,7 +23,10 @@ export type TechnologyModel = {
   lockedMessage?: string,
 }
 
-export const ProtonDecayAccelerator = {
+const Technologies: { [key: string]: TechnologyModel } = {};
+
+Technologies.ProtonDecayAccelerator = {
+  id: "ProtonDecayAccelerator",
   name: "Proton Decay Accelerator",
   icon: <Icons.Disintegration width={64} height={64} fill="white" stroke="black" strokeWidth={3} />,
   description: <div>
@@ -41,7 +43,7 @@ export const ProtonDecayAccelerator = {
   bought: false,
 
   effect: (state: StateType) => {
-    for (const generator of state.generators) {
+    for (const [, generator] of Object.entries(state.generators)) {
       generator.bonuses.push({
         name: "Proton Decay Accelerator",
         multiplier: 1.05, // 5%
@@ -51,15 +53,8 @@ export const ProtonDecayAccelerator = {
   effectMessage: <span>All generator <span style={{ color: "lime" }}>+5%</span></span>,
 
   isLocked: true,
-  unlock: (state: StateType) => (where(state.generators, (generator) => generator.name == EntropicAccelerator.name)?.owned ?? 0) >= 2,
+  unlock: (state: StateType) => state.generators.EntropicAccelerator.owned >= 2,
   lockedMessage: "Requires 2 Entropic Accelerators",
 }
-
-// ----------------------------------------------------------------------------
-// Models List
-
-const Technologies: TechnologyModel[] = [
-  ProtonDecayAccelerator,
-];
 
 export default Technologies;

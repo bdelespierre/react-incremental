@@ -1,7 +1,7 @@
 import { Button, ButtonGroup, Card } from "react-bootstrap"
 import Icons from "./Icons"
 import React, { ReactElement, useContext, useState } from "react"
-import { GeneratorModel, getCostToBuy, getMaxToBuy } from "./models/Generators"
+import { GeneratorModel, getCostToBuy, getGeneratorOutput, getMaxToBuy } from "./models/Generators"
 import { displayCurrency } from "./Helpers";
 import { MAIN_CURRENCY } from "./models/Wallet";
 import { BUY_GENERATOR, StateContext } from "./App";
@@ -50,7 +50,7 @@ export default function Generator(props: GeneratorProps) {
         {props.generator.icon}
         <div className="flex-grow-1 d-flex flex-column justify-content-center" style={{ height: "64px" }}>
           <h5 className="mb-0">{props.generator.name}</h5>
-          <span style={{ fontSize: ".8rem" }}>Outputs <span className="font-monospace" style={{ color: "gold" }}>{displayCurrency(props.generator.output * props.generator.owned)}</span> Entropy</span>
+          <span style={{ fontSize: ".8rem" }}>Outputs <span className="font-monospace" style={{ color: "gold" }}>{displayCurrency(getGeneratorOutput(props.generator))}</span> Entropy</span>
         </div>
         <div className="font-monospace" style={{ fontSize: "48px", lineHeight: "64px", textAlign: "center", height: "64px", paddingTop: "4px" }}>
           {props.generator.owned}

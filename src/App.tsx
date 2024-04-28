@@ -9,14 +9,14 @@ import AppHeader from './AppHeader';
 import './App.css'
 import 'animate.css'
 import TechnologiesPage from './pages/TechnologiesPage';
-import Generators, { GeneratorModel, getCostToBuy } from './models/Generators';
+import Generators, { GeneratorModel, getCostToBuy, getGeneratorOutput } from './models/Generators';
 import Technologies, { TechnologyModel } from './models/Technologies';
 import Wallet, { MAIN_CURRENCY } from './models/Wallet';
 import { cloneAndUpdate } from './Helpers';
 
 export type StateType = {
-  generators: GeneratorModel[],
-  technologies: TechnologyModel[],
+  generators: typeof Generators,
+  technologies: typeof Technologies,
   wallet: typeof Wallet,
 }
 
@@ -34,11 +34,6 @@ export type ActionType = { type: "UNLOCK_GENERATOR", payload: { generator: Gener
 
 const unlockGenerator = (state: StateType, { generator }: { generator: GeneratorModel }) => {
   console.log("unlock generator");
-  const index = state.generators.indexOf(generator);
-
-  if (index == -1) {
-    return state;
-  }
 
   if (generator.isLocked == false) {
     return state;
@@ -47,7 +42,7 @@ const unlockGenerator = (state: StateType, { generator }: { generator: Generator
   return {
     ...state,
     generators: cloneAndUpdate(state.generators, (clonedGenerators) => {
-      clonedGenerators[index] = cloneAndUpdate(generator, (clonedGenerator) => {
+      clonedGenerators[generator.id] = cloneAndUpdate(generator, (clonedGenerator) => {
         clonedGenerator.isLocked = false;
       });
     })
@@ -56,13 +51,8 @@ const unlockGenerator = (state: StateType, { generator }: { generator: Generator
 
 const buyGenerator = (state: StateType, { generator, qt }: { generator: GeneratorModel, qt: number }) => {
   console.log("buy generator");
-  const index = state.generators.indexOf(generator);
   const funds = state.wallet.get(MAIN_CURRENCY)!;
   const cost = getCostToBuy(generator, qt);
-
-  if (index == -1) {
-    return state;
-  }
 
   if (funds < cost) {
     return state;
@@ -74,7 +64,7 @@ const buyGenerator = (state: StateType, { generator, qt }: { generator: Generato
       wallet.set(MAIN_CURRENCY, funds - cost)
     }),
     generators: cloneAndUpdate(state.generators, (clonedGenerators) => {
-      clonedGenerators[index] = cloneAndUpdate(generator, (clonedGenerator) => {
+      clonedGenerators[generator.id] = cloneAndUpdate(generator, (clonedGenerator) => {
         clonedGenerator.owned += qt;
       })
     })
@@ -83,11 +73,6 @@ const buyGenerator = (state: StateType, { generator, qt }: { generator: Generato
 
 const unlockTechnology = (state: StateType, { technology }: { technology: TechnologyModel }) => {
   console.log("unlock technology");
-  const index = state.technologies.indexOf(technology);
-
-  if (index == -1) {
-    return state;
-  }
 
   if (technology.isLocked == false) {
     return state;
@@ -96,7 +81,7 @@ const unlockTechnology = (state: StateType, { technology }: { technology: Techno
   return {
     ...state,
     technologies: cloneAndUpdate(state.technologies, (clonedTechnologies) => {
-      clonedTechnologies[index] = cloneAndUpdate(technology, (clonedTechnology) => {
+      clonedTechnologies[technology.id] = cloneAndUpdate(technology, (clonedTechnology) => {
         clonedTechnology.isLocked = false;
       });
     })
@@ -105,13 +90,8 @@ const unlockTechnology = (state: StateType, { technology }: { technology: Techno
 
 const buyTechnology = (state: StateType, { technology }: { technology: TechnologyModel }) => {
   console.log("buy technology");
-  const index = state.technologies.indexOf(technology);
   const funds = state.wallet.get(MAIN_CURRENCY)!;
   const cost = technology.cost;
-
-  if (index == -1) {
-    return state;
-  }
 
   if (technology.bought) {
     return state;
@@ -131,7 +111,7 @@ const buyTechnology = (state: StateType, { technology }: { technology: Technolog
       clonedWallet.set(MAIN_CURRENCY, funds - cost);
     }),
     technologies: cloneAndUpdate(state.technologies, (clonedTechnologies) => {
-      clonedTechnologies[index] = cloneAndUpdate(technology, (clonedTechnology) => {
+      clonedTechnologies[technology.id] = cloneAndUpdate(technology, (clonedTechnology) => {
         clonedTechnology.bought = true;
       });
     }),
@@ -195,14 +175,14 @@ function App() {
   useEffect(() => {
     console.log("use effect");
 
-    for (const generator of state.generators) {
+    for (const [, generator] of Object.entries(state.generators)) {
       if (generator.isLocked && generator.unlock && generator.unlock(state)) {
         console.log(`unlocking ${generator.name}`)
         dispatch({ type: UNLOCK_GENERATOR, payload: { generator } });
       }
     }
 
-    for (const technology of state.technologies) {
+    for (const [, technology] of Object.entries(state.technologies)) {
       if (technology.isLocked && technology.unlock && technology.unlock(state)) {
         console.log(`unlocking ${technology.name}`)
         dispatch({ type: UNLOCK_TECHNOLOGY, payload: { technology } });
@@ -212,18 +192,11 @@ function App() {
     const interval = setInterval(() => {
       console.log("interval");
 
-      let generated = 0;
-      for (const generator of state.generators) {
-        if (generator.isLocked) {
-          continue;
-        }
-        let amount = generator.output * generator.owned;
-        for (const bonus of generator.bonuses) {
-          amount *= bonus.multiplier;
-        }
-        generated += amount;
-      }
-      dispatch({ type: INCREASE_MAIN_CURRENCY, payload: { amount: generated } });
+      const amount = Object.entries(state.generators).reduce(
+        (carry, [, generator]) => carry + (generator.isLocked ? 0 : getGeneratorOutput(generator)), 0
+      );
+
+      dispatch({ type: INCREASE_MAIN_CURRENCY, payload: { amount } });
     }, 1000);
 
     // Clean up the interval on component unmount

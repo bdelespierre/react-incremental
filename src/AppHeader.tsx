@@ -1,10 +1,11 @@
 import React, { useContext } from 'react';
 import { Container, Nav, NavDropdown, Navbar, Offcanvas } from 'react-bootstrap';
-import EntropyContext from './EntropyContext';
-import { currency } from './Helpers';
+import { displayCurrency } from './Helpers';
+import { StateContext } from './App';
+import { MAIN_CURRENCY } from './models/Wallet';
 
 export default function AppHeader() {
-  const { entropy } = useContext(EntropyContext);
+  const { state } = useContext(StateContext);
 
   return (
     <Navbar key="sm" expand="sm" className="bg-body-tertiary mb-3">
@@ -13,7 +14,7 @@ export default function AppHeader() {
         <Navbar.Brand href="#" className="flex-grow-1">Universal Idle</Navbar.Brand>
         <Navbar.Text>
           <div style={{ background: "#212529", paddingLeft: ".3rem", paddingRight: ".3rem", borderRadius: "3px" }}>
-            Entropy <span className="font-monospace" style={{ color: "gold" }}>{currency(entropy)}</span>
+            {MAIN_CURRENCY.name} <span className="font-monospace" style={{ color: "gold" }}>{displayCurrency(state.wallet.get(MAIN_CURRENCY)!)}</span>
           </div>
         </Navbar.Text>
         <Navbar.Offcanvas
